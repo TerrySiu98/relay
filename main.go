@@ -619,6 +619,13 @@ func runMaster() {
 	http.HandleFunc("/2fa/generate", authMiddleware(handle2FAGenerate))
 	http.HandleFunc("/2fa/verify", authMiddleware(handle2FAVerify))
 	http.HandleFunc("/2fa/disable", authMiddleware(handle2FADisable))
+	// 新增功能接口
+	http.HandleFunc("/batch_toggle", authMiddleware(handleBatchToggle))
+	http.HandleFunc("/batch_delete", authMiddleware(handleBatchDelete))
+	http.HandleFunc("/clone", authMiddleware(handleCloneRule))
+	http.HandleFunc("/export_rules", authMiddleware(handleExportRules))
+	http.HandleFunc("/import_rules", authMiddleware(handleImportRules))
+	http.HandleFunc("/reset_all_traffic", authMiddleware(handleResetAllTraffic))
 
 	log.Printf("面板启动: http://localhost%s", WebPort)
 	log.Fatal(http.ListenAndServe(WebPort, nil))
@@ -1238,6 +1245,159 @@ func handleExportLogs(w http.ResponseWriter, r *http.Request) {
 	b, _ := json.MarshalIndent(logs, "", "  ")
 	w.Header().Set("Content-Disposition", "attachment; filename=logs.json")
 	w.Write(b)
+}
+
+// 批量切换规则状态
+func handleBatchToggle(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		IDs    []string `json:"ids"`
+		Action string   `json:"action"` // "enable" or "disable"
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "无效请求", 400)
+		return
+	}
+	mu.Lock()
+	for _, id := range req.IDs {
+		for i := range rules {
+			if rules[i].ID == id {
+				if req.Action == "enable" {
+					rules[i].Disabled = false
+				} else {
+					rules[i].Disabled = true
+				}
+				break
+			}
+		}
+	}
+	saveConfigNoLock()
+	mu.Unlock()
+	go pushConfigToAll()
+	addLog(r, "批量操作", fmt.Sprintf("批量%s了 %d 条规则", map[string]string{"enable": "启用", "disable": "禁用"}[req.Action], len(req.IDs)))
+	json.NewEncoder(w).Encode(map[string]bool{"success": true})
+}
+
+// 批量删除规则
+func handleBatchDelete(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "无效请求", 400)
+		return
+	}
+	idSet := make(map[string]bool)
+	for _, id := range req.IDs {
+		idSet[id] = true
+	}
+	mu.Lock()
+	var newRules []LogicalRule
+	for _, r := range rules {
+		if !idSet[r.ID] {
+			newRules = append(newRules, r)
+		}
+	}
+	rules = newRules
+	saveConfigNoLock()
+	mu.Unlock()
+	go pushConfigToAll()
+	addLog(r, "批量删除", fmt.Sprintf("删除了 %d 条规则", len(req.IDs)))
+	json.NewEncoder(w).Encode(map[string]bool{"success": true})
+}
+
+// 克隆规则
+func handleCloneRule(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	mu.Lock()
+	var found *LogicalRule
+	for i := range rules {
+		if rules[i].ID == id {
+			found = &rules[i]
+			break
+		}
+	}
+	if found == nil {
+		mu.Unlock()
+		http.Error(w, "规则不存在", 404)
+		return
+	}
+	newRule := LogicalRule{
+		ID:           fmt.Sprintf("%d", time.Now().UnixNano()),
+		Note:         found.Note + " (副本)",
+		EntryAgent:   found.EntryAgent,
+		EntryPort:    fmt.Sprintf("%d", 20000+time.Now().UnixNano()%30000),
+		ExitAgent:    found.ExitAgent,
+		TargetIP:     found.TargetIP,
+		TargetPort:   found.TargetPort,
+		Protocol:     found.Protocol,
+		TrafficLimit: found.TrafficLimit,
+		SpeedLimit:   found.SpeedLimit,
+		BridgePort:   fmt.Sprintf("%d", 20000+time.Now().UnixNano()%30000+1),
+		Disabled:     true,
+	}
+	rules = append(rules, newRule)
+	saveConfigNoLock()
+	mu.Unlock()
+	addLog(r, "克隆规则", fmt.Sprintf("克隆了规则: %s", found.Note))
+	http.Redirect(w, r, "/#rules", http.StatusSeeOther)
+}
+
+// 导出规则
+func handleExportRules(w http.ResponseWriter, r *http.Request) {
+	mu.Lock()
+	exportRules := make([]LogicalRule, len(rules))
+	copy(exportRules, rules)
+	mu.Unlock()
+	// 清除统计数据，只导出配置
+	for i := range exportRules {
+		exportRules[i].TotalTx = 0
+		exportRules[i].TotalRx = 0
+		exportRules[i].UserCount = 0
+	}
+	b, _ := json.MarshalIndent(exportRules, "", "  ")
+	w.Header().Set("Content-Disposition", "attachment; filename=rules.json")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(b)
+}
+
+// 导入规则
+func handleImportRules(w http.ResponseWriter, r *http.Request) {
+	var importRules []LogicalRule
+	if err := json.NewDecoder(r.Body).Decode(&importRules); err != nil {
+		json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "error": "JSON 格式错误"})
+		return
+	}
+	mu.Lock()
+	importCount := 0
+	for _, ir := range importRules {
+		// 生成新ID和端口，避免冲突
+		ir.ID = fmt.Sprintf("%d", time.Now().UnixNano()+int64(importCount))
+		ir.BridgePort = fmt.Sprintf("%d", 20000+time.Now().UnixNano()%30000+int64(importCount))
+		ir.TotalTx = 0
+		ir.TotalRx = 0
+		ir.UserCount = 0
+		ir.Disabled = true // 导入后默认禁用
+		rules = append(rules, ir)
+		importCount++
+	}
+	saveConfigNoLock()
+	mu.Unlock()
+	go pushConfigToAll()
+	addLog(r, "导入规则", fmt.Sprintf("导入了 %d 条规则", importCount))
+	json.NewEncoder(w).Encode(map[string]interface{}{"success": true, "count": importCount})
+}
+
+// 重置所有规则流量
+func handleResetAllTraffic(w http.ResponseWriter, r *http.Request) {
+	mu.Lock()
+	for i := range rules {
+		rules[i].TotalTx = 0
+		rules[i].TotalRx = 0
+	}
+	saveConfigNoLock()
+	mu.Unlock()
+	addLog(r, "重置流量", "重置了所有规则的流量统计")
+	http.Redirect(w, r, "/#rules", http.StatusSeeOther)
 }
 
 // ================= AGENT CORE =================
@@ -2067,13 +2227,67 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
             </div>
 
             <div class="card">
-                <h3><i class="ri-list-check"></i> 规则列表</h3>
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;margin-bottom:20px">
+                    <h3 style="margin:0"><i class="ri-list-check"></i> 规则列表 <span id="rules-count" style="font-size:12px;color:var(--text-sub);font-weight:400"></span></h3>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap">
+                        <a href="/export_rules" class="btn secondary" style="text-decoration:none;font-size:13px"><i class="ri-download-line"></i> 导出</a>
+                        <button class="btn secondary" onclick="showImportModal()" style="font-size:13px"><i class="ri-upload-line"></i> 导入</button>
+                        <button class="btn danger" onclick="resetAllTraffic()" style="font-size:13px"><i class="ri-refresh-line"></i> 全部重置流量</button>
+                    </div>
+                </div>
+                
+                <!-- 筛选工具栏 -->
+                <div style="background:var(--input-bg);padding:15px;border-radius:12px;margin-bottom:20px;display:flex;gap:15px;flex-wrap:wrap;align-items:center">
+                    <div style="flex:1;min-width:200px">
+                        <input id="rule-search" type="text" placeholder="🔍 搜索规则名称..." oninput="filterRules()" style="width:100%">
+                    </div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap">
+                        <select id="filter-entry" onchange="filterRules()" style="min-width:120px">
+                            <option value="">入口节点</option>
+                            {{range .Agents}}<option value="{{.Name}}">{{.Name}}</option>{{end}}
+                        </select>
+                        <select id="filter-exit" onchange="filterRules()" style="min-width:120px">
+                            <option value="">出口节点</option>
+                            {{range .Agents}}<option value="{{.Name}}">{{.Name}}</option>{{end}}
+                        </select>
+                        <select id="filter-status" onchange="filterRules()" style="min-width:100px">
+                            <option value="">全部状态</option>
+                            <option value="active">运行中</option>
+                            <option value="paused">已暂停</option>
+                            <option value="exhausted">流量耗尽</option>
+                        </select>
+                        <select id="sort-by" onchange="sortRules()" style="min-width:120px">
+                            <option value="">默认排序</option>
+                            <option value="traffic-desc">流量 ↓</option>
+                            <option value="traffic-asc">流量 ↑</option>
+                            <option value="users-desc">用户数 ↓</option>
+                            <option value="users-asc">用户数 ↑</option>
+                            <option value="name-asc">名称 A-Z</option>
+                            <option value="name-desc">名称 Z-A</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 批量操作栏 -->
+                <div id="batch-bar" style="display:none;background:var(--primary-light);padding:12px 15px;border-radius:10px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center">
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <input type="checkbox" id="select-all" onchange="toggleSelectAll()" style="width:18px;height:18px">
+                        <span id="selected-count" style="font-size:14px;font-weight:500">已选择 0 条</span>
+                    </div>
+                    <div style="display:flex;gap:8px">
+                        <button class="btn" onclick="batchAction('enable')" style="font-size:13px"><i class="ri-play-fill"></i> 批量启用</button>
+                        <button class="btn secondary" onclick="batchAction('disable')" style="font-size:13px"><i class="ri-pause-fill"></i> 批量禁用</button>
+                        <button class="btn danger" onclick="batchAction('delete')" style="font-size:13px"><i class="ri-delete-bin-line"></i> 批量删除</button>
+                    </div>
+                </div>
+
                 <div class="table-container">
-                    <table>
-                        <thead><tr><th>链路信息</th><th>目标地址</th><th>流量监控</th><th>状态</th><th>操作</th></tr></thead>
-                        <tbody>
+                    <table id="rules-table">
+                        <thead><tr><th style="width:40px"><input type="checkbox" id="header-select-all" onchange="toggleSelectAll()" style="width:16px;height:16px"></th><th>链路信息</th><th>目标地址</th><th>流量监控</th><th>状态</th><th>操作</th></tr></thead>
+                        <tbody id="rules-tbody">
                         {{range .Rules}}
-                        <tr style="{{if .Disabled}}opacity:0.6;filter:grayscale(1);{{end}}">
+                        <tr class="rule-row" data-id="{{.ID}}" data-name="{{.Note}}" data-entry="{{.EntryAgent}}" data-exit="{{.ExitAgent}}" data-disabled="{{.Disabled}}" data-traffic="{{add .TotalTx .TotalRx}}" data-limit="{{.TrafficLimit}}" style="{{if .Disabled}}opacity:0.6;filter:grayscale(1);{{end}}">
+                            <td><input type="checkbox" class="rule-checkbox" value="{{.ID}}" onchange="updateBatchBar()" style="width:16px;height:16px"></td>
                             <td>
                                 <div style="font-weight:700">{{if .Note}}{{.Note}}{{else}}未命名{{end}}</div>
                                 <div style="font-size:12px;color:var(--text-sub);margin-top:4px;display:flex;align-items:center;gap:5px">
@@ -2107,9 +2321,10 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
                                 <div style="font-size:10px;color:var(--text-sub);margin-top:4px">限速: {{formatSpeed .SpeedLimit}}</div>
                             </td>
                             <td>
-                                <div style="display:flex;gap:6px">
+                                <div style="display:flex;gap:6px;flex-wrap:wrap">
                                     <button class="btn icon secondary" onclick="toggleRule('{{.ID}}')" title="切换状态">{{if .Disabled}}<i class="ri-play-fill" style="color:var(--success)"></i>{{else}}<i class="ri-pause-fill" style="color:var(--warning)"></i>{{end}}</button>
                                     <button class="btn icon secondary" onclick="openEdit('{{.ID}}','{{.Note}}','{{.EntryAgent}}','{{.EntryPort}}','{{.ExitAgent}}','{{.TargetIP}}','{{.TargetPort}}','{{.Protocol}}','{{.TrafficLimit}}','{{.SpeedLimit}}')" title="编辑"><i class="ri-edit-line"></i></button>
+                                    <button class="btn icon secondary" onclick="cloneRule('{{.ID}}')" title="克隆"><i class="ri-file-copy-line"></i></button>
                                     <button class="btn icon secondary" onclick="resetTraffic('{{.ID}}')" title="重置流量"><i class="ri-refresh-line"></i></button>
                                     <button class="btn icon danger" onclick="delRule('{{.ID}}')" title="删除"><i class="ri-delete-bin-line"></i></button>
                                 </div>
@@ -2267,6 +2482,19 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
     </div>
 </div>
 
+<div id="importModal" class="modal">
+    <div class="modal-content" style="max-width:500px">
+        <span class="close-modal" onclick="document.getElementById('importModal').style.display='none'">&times;</span>
+        <h3 style="margin-top:0"><i class="ri-upload-line"></i> 导入规则</h3>
+        <p style="font-size:13px;color:var(--text-sub);margin-bottom:15px">粘贴通过"导出"功能获取的 JSON 格式规则数据</p>
+        <textarea id="import-json" placeholder='[{"note":"规则名称","entry_agent":"入口节点",...}]' style="width:100%;height:200px;border:1px solid var(--border);border-radius:10px;background:var(--input-bg);color:var(--text-main);padding:12px;font-family:monospace;font-size:13px;resize:vertical"></textarea>
+        <div style="display:flex;gap:10px;margin-top:15px">
+            <button class="btn secondary" style="flex:1" onclick="document.getElementById('importModal').style.display='none'">取消</button>
+            <button class="btn" style="flex:1" onclick="importRules()"><i class="ri-check-line"></i> 确认导入</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // --- 核心逻辑 ---
     var m_domain="{{.MasterDomain}}", m_v4="{{.MasterIP}}", m_v6="{{.MasterIPv6}}", port="9999", token="{{.Token}}", dwUrl="{{.DownloadURL}}", is_tls={{.IsTLS}};
@@ -2363,6 +2591,162 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
     function toggleRule(id) { location.href="/toggle?id="+id; }
     function resetTraffic(id) { showConfirm("重置流量", "确定要清零该规则的流量统计吗？", "normal", () => location.href="/reset_traffic?id="+id); }
     function delAgent(name) { showConfirm("卸载节点", "确定要卸载节点 <b>"+name+"</b> 吗？<br>这将向节点发送自毁指令。", "danger", () => location.href="/delete_agent?name="+name); }
+    function cloneRule(id) { showConfirm("克隆规则", "确定要复制这条规则吗？<br>新规则将默认禁用状态。", "normal", () => location.href="/clone?id="+id); }
+    function resetAllTraffic() { showConfirm("重置所有流量", "确定要清零<b>所有规则</b>的流量统计吗？<br>此操作不可撤销！", "danger", () => location.href="/reset_all_traffic"); }
+
+    // 规则筛选
+    function filterRules() {
+        const search = document.getElementById('rule-search').value.toLowerCase();
+        const entryFilter = document.getElementById('filter-entry').value;
+        const exitFilter = document.getElementById('filter-exit').value;
+        const statusFilter = document.getElementById('filter-status').value;
+        
+        let visibleCount = 0;
+        document.querySelectorAll('.rule-row').forEach(row => {
+            const name = (row.dataset.name || '').toLowerCase();
+            const entry = row.dataset.entry;
+            const exit = row.dataset.exit;
+            const disabled = row.dataset.disabled === 'true';
+            const traffic = parseInt(row.dataset.traffic) || 0;
+            const limit = parseInt(row.dataset.limit) || 0;
+            const exhausted = limit > 0 && traffic >= limit;
+            
+            let show = true;
+            if (search && !name.includes(search)) show = false;
+            if (entryFilter && entry !== entryFilter) show = false;
+            if (exitFilter && exit !== exitFilter) show = false;
+            if (statusFilter === 'active' && (disabled || exhausted)) show = false;
+            if (statusFilter === 'paused' && !disabled) show = false;
+            if (statusFilter === 'exhausted' && !exhausted) show = false;
+            
+            row.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
+        });
+        
+        const total = document.querySelectorAll('.rule-row').length;
+        document.getElementById('rules-count').innerText = visibleCount === total ? 
+            '(共 ' + total + ' 条)' : '(显示 ' + visibleCount + '/' + total + ')';
+    }
+
+    // 规则排序
+    function sortRules() {
+        const sortBy = document.getElementById('sort-by').value;
+        if (!sortBy) return;
+        
+        const tbody = document.getElementById('rules-tbody');
+        const rows = Array.from(tbody.querySelectorAll('.rule-row'));
+        
+        rows.sort((a, b) => {
+            if (sortBy === 'traffic-desc') return parseInt(b.dataset.traffic) - parseInt(a.dataset.traffic);
+            if (sortBy === 'traffic-asc') return parseInt(a.dataset.traffic) - parseInt(b.dataset.traffic);
+            if (sortBy === 'users-desc') {
+                const ucA = parseInt(document.getElementById('rule-uc-'+a.dataset.id)?.innerText || 0);
+                const ucB = parseInt(document.getElementById('rule-uc-'+b.dataset.id)?.innerText || 0);
+                return ucB - ucA;
+            }
+            if (sortBy === 'users-asc') {
+                const ucA = parseInt(document.getElementById('rule-uc-'+a.dataset.id)?.innerText || 0);
+                const ucB = parseInt(document.getElementById('rule-uc-'+b.dataset.id)?.innerText || 0);
+                return ucA - ucB;
+            }
+            if (sortBy === 'name-asc') return (a.dataset.name || '').localeCompare(b.dataset.name || '');
+            if (sortBy === 'name-desc') return (b.dataset.name || '').localeCompare(a.dataset.name || '');
+            return 0;
+        });
+        
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // 批量选择
+    function toggleSelectAll() {
+        const checkboxes = document.querySelectorAll('.rule-checkbox');
+        const headerCheck = document.getElementById('header-select-all');
+        checkboxes.forEach(cb => {
+            if (cb.closest('.rule-row').style.display !== 'none') {
+                cb.checked = headerCheck.checked;
+            }
+        });
+        updateBatchBar();
+    }
+
+    function updateBatchBar() {
+        const checked = document.querySelectorAll('.rule-checkbox:checked');
+        const count = checked.length;
+        const batchBar = document.getElementById('batch-bar');
+        const countSpan = document.getElementById('selected-count');
+        
+        if (count > 0) {
+            batchBar.style.display = 'flex';
+            countSpan.innerText = '已选择 ' + count + ' 条';
+        } else {
+            batchBar.style.display = 'none';
+        }
+    }
+
+    function batchAction(action) {
+        const checked = document.querySelectorAll('.rule-checkbox:checked');
+        const ids = Array.from(checked).map(cb => cb.value);
+        
+        if (ids.length === 0) {
+            showToast("请先选择规则", "warn");
+            return;
+        }
+
+        if (action === 'delete') {
+            showConfirm("批量删除", "确定要删除选中的 <b>" + ids.length + "</b> 条规则吗？", "danger", () => {
+                fetch('/batch_delete', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ids: ids})
+                }).then(r => r.json()).then(d => {
+                    if (d.success) location.reload();
+                });
+            });
+        } else {
+            fetch('/batch_toggle', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ids: ids, action: action})
+            }).then(r => r.json()).then(d => {
+                if (d.success) location.reload();
+            });
+        }
+    }
+
+    // 导入规则
+    function showImportModal() {
+        document.getElementById('importModal').style.display = 'block';
+    }
+
+    function importRules() {
+        const input = document.getElementById('import-json');
+        try {
+            const rules = JSON.parse(input.value);
+            if (!Array.isArray(rules)) throw new Error("格式错误");
+            
+            fetch('/import_rules', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(rules)
+            }).then(r => r.json()).then(d => {
+                if (d.success) {
+                    showToast("成功导入 " + d.count + " 条规则", "success");
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(d.error || "导入失败", "warn");
+                }
+            });
+        } catch(e) {
+            showToast("JSON 格式错误，请检查", "warn");
+        }
+    }
+
+    // 初始化规则计数
+    document.addEventListener('DOMContentLoaded', function() {
+        const total = document.querySelectorAll('.rule-row').length;
+        const countEl = document.getElementById('rules-count');
+        if (countEl) countEl.innerText = '(共 ' + total + ' 条)';
+    });
 
     // 编辑
     function openEdit(id, note, entry, eport, exit, tip, tport, proto, limit, speed) {
