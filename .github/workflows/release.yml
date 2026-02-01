@@ -10,7 +10,6 @@ permissions:
   contents: write
 
 jobs:
-  # 编译二进制文件
   build-binary:
     runs-on: ubuntu-latest
     strategy:
@@ -43,7 +42,6 @@ jobs:
           name: relay_${{ matrix.goos }}_${{ matrix.goarch }}
           path: relay_${{ matrix.goos }}_${{ matrix.goarch }}
 
-  # 发布二进制到 GitHub Releases
   release:
     needs: build-binary
     runs-on: ubuntu-latest
@@ -62,13 +60,25 @@ jobs:
             artifacts/relay_linux_arm64/relay_linux_arm64
           generate_release_notes: true
 
-  # 构建并推送 Docker 多架构镜像
   build-docker:
+    needs: build-binary
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Download amd64 binary
+        uses: actions/download-artifact@v4
+        with:
+          name: relay_linux_amd64
+          path: docker-build/amd64
+
+      - name: Download arm64 binary
+        uses: actions/download-artifact@v4
+        with:
+          name: relay_linux_arm64
+          path: docker-build/arm64
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -89,7 +99,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: docker-build
+          file: Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
