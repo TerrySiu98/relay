@@ -1,0 +1,2377 @@
+<!DOCTYPE html>
+<html lang="zh" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <title>GoRelay Pro Dashboard</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/3.5.0/remixicon.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --primary-light: rgba(99, 102, 241, 0.1);
+            --bg-body: #f8fafc;
+            --bg-sidebar: #ffffff;
+            --bg-card: #ffffff;
+            --bg-glass: rgba(255, 255, 255, 0.8);
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --text-inv: #ffffff;
+            --border: #e2e8f0;
+            --input-bg: #f1f5f9;
+            --success: #10b981;
+            --success-bg: rgba(16, 185, 129, 0.1);
+            --success-text: #059669;
+            --danger: #ef4444;
+            --danger-bg: rgba(239, 68, 68, 0.1);
+            --danger-text: #dc2626;
+            --warning: #f59e0b;
+            --warning-bg: rgba(245, 158, 11, 0.1);
+            --warning-text: #d97706;
+            --radius: 16px;
+            --radius-sm: 8px;
+            --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            --sidebar-w: 260px;
+            --font-main: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --trans: all 0.2s ease;
+        }
+
+        [data-theme="dark"] {
+            --primary: #818cf8;
+            --primary-hover: #6366f1;
+            --primary-light: rgba(129, 140, 248, 0.15);
+            --bg-body: #09090b;
+            --bg-sidebar: #09090b;
+            --bg-card: #18181b;
+            --bg-glass: rgba(24, 24, 27, 0.7);
+            --text-main: #fafafa;
+            --text-sub: #a1a1aa;
+            --border: #27272a;
+            --input-bg: #27272a;
+            --success-bg: rgba(16, 185, 129, 0.15);
+            --success-text: #34d399;
+            --danger-bg: rgba(239, 68, 68, 0.15);
+            --danger-text: #f87171;
+            --warning-bg: rgba(245, 158, 11, 0.15);
+            --warning-text: #fbbf24;
+            --shadow-card: 0 0 0 1px #27272a;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-main);
+            background: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            font-size: 14px;
+            letter-spacing: -0.01em;
+            transition: background 0.3s;
+        }
+
+        /* 增强背景装饰层 (圆形、星星图案) - 高对比度调整 */
+        .bg-decor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.15;
+        }
+
+        /* 基础不透明度提升至 0.15 */
+        [data-theme="dark"] .shape {
+            opacity: 0.12;
+        }
+
+        /* 深色模式下不透明度提升至 0.12 */
+
+        .shape-circle {
+            border-radius: 50%;
+            background: var(--primary);
+        }
+
+        .shape-star {
+            background: var(--text-sub);
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        }
+
+        /* 具体的图形定位与动画 - 增加可见度 */
+        .s1 {
+            top: 10%;
+            left: 5%;
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(45deg, var(--primary), var(--success));
+            filter: blur(60px);
+            opacity: 0.2;
+        }
+
+        /* 渐变色块增强 */
+        .s2 {
+            bottom: 15%;
+            right: -5%;
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(to top, var(--primary), #8b5cf6);
+            filter: blur(80px);
+            opacity: 0.2;
+        }
+
+        .shape-c1 {
+            top: 15%;
+            right: 15%;
+            width: 80px;
+            height: 80px;
+            border: 4px solid var(--primary);
+            background: transparent;
+            opacity: 0.25;
+            animation: float 10s ease-in-out infinite;
+        }
+
+        /* 圆环增强 */
+        .shape-st1 {
+            bottom: 10%;
+            left: 8%;
+            width: 120px;
+            height: 120px;
+            opacity: 0.15;
+            background: var(--text-main);
+            transform: rotate(-15deg);
+            animation: float 12s ease-in-out infinite reverse;
+        }
+
+        .shape-c2 {
+            bottom: 30%;
+            right: 25%;
+            width: 40px;
+            height: 40px;
+            background: var(--warning);
+            opacity: 0.2;
+            animation: float 8s ease-in-out infinite 1s;
+        }
+
+        .shape-st2 {
+            top: 20%;
+            left: 20%;
+            width: 30px;
+            height: 30px;
+            background: var(--success);
+            opacity: 0.25;
+            animation: float 14s ease-in-out infinite 2s;
+        }
+
+        /* 新增的更多图形 - 同样增强可见度 */
+        .shape-c3 {
+            top: 40%;
+            left: 15%;
+            width: 60px;
+            height: 60px;
+            border: 2px dashed var(--text-sub);
+            background: transparent;
+            opacity: 0.15;
+            animation: rotate 30s linear infinite;
+        }
+
+        .shape-st3 {
+            top: 5%;
+            left: 50%;
+            width: 25px;
+            height: 25px;
+            background: var(--danger);
+            opacity: 0.2;
+            animation: float 18s ease-in-out infinite 3s;
+        }
+
+        .shape-c4 {
+            bottom: 20%;
+            left: 40%;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            opacity: 0.2;
+            animation: float 10s infinite;
+        }
+
+        .shape-st4 {
+            top: 60%;
+            right: 10%;
+            width: 50px;
+            height: 50px;
+            background: var(--success);
+            opacity: 0.15;
+            animation: float 22s infinite reverse;
+        }
+
+        .shape-c5 {
+            top: 80%;
+            left: 5%;
+            width: 100px;
+            height: 100px;
+            border: 6px solid var(--danger);
+            background: transparent;
+            opacity: 0.1;
+            animation: float 25s infinite;
+        }
+
+        .shape-st5 {
+            top: 8%;
+            right: 30%;
+            width: 35px;
+            height: 35px;
+            background: var(--text-main);
+            opacity: 0.15;
+            animation: float 13s infinite;
+        }
+
+        .shape-c6 {
+            bottom: 5%;
+            left: 60%;
+            width: 150px;
+            height: 150px;
+            border: 1px solid var(--text-sub);
+            background: transparent;
+            opacity: 0.1;
+            animation: rotate 45s linear infinite reverse;
+        }
+
+        .shape-st6 {
+            bottom: 40%;
+            right: 40%;
+            width: 15px;
+            height: 15px;
+            background: var(--warning);
+            opacity: 0.3;
+            animation: float 9s infinite;
+        }
+
+        .shape-c7 {
+            top: 30%;
+            left: 35%;
+            width: 10px;
+            height: 10px;
+            background: var(--success);
+            opacity: 0.3;
+            animation: float 7s infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-15px) rotate(5deg);
+            }
+
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-sub);
+        }
+
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 50;
+            padding: 24px 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            padding: 0 12px 24px 12px;
+            font-size: 18px;
+            font-weight: 700;
+            gap: 12px;
+            color: var(--text-main);
+        }
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.4);
+        }
+
+        .menu {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            overflow-y: auto;
+        }
+
+        .item {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            color: var(--text-sub);
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            transition: var(--trans);
+            font-weight: 500;
+            font-size: 13.5px;
+        }
+
+        .item:hover {
+            background: var(--input-bg);
+            color: var(--text-main);
+        }
+
+        .item.active {
+            background: var(--input-bg);
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .item.active i {
+            color: var(--primary);
+        }
+
+        .item i {
+            margin-right: 10px;
+            font-size: 18px;
+            transition: var(--trans);
+        }
+
+        .user-panel {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .user-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            background: var(--input-bg);
+            transition: var(--trans);
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #3b82f6, #06b6d4);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .btn-logout {
+            background: transparent;
+            border: none;
+            color: var(--text-sub);
+            cursor: pointer;
+            margin-left: auto;
+            padding: 8px;
+            border-radius: 6px;
+            display: flex;
+        }
+
+        .btn-logout:hover {
+            background: var(--border);
+            color: var(--danger);
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .header {
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            z-index: 40;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.3s;
+        }
+
+        .main.scrolled .header {
+            border-bottom-color: var(--border);
+            background: var(--bg-glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .page-title {
+            font-weight: 700;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-main);
+        }
+
+        .theme-toggle {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--trans);
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .content {
+            flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        .page {
+            display: none;
+            max-width: 1200px;
+            margin: 0 auto;
+            animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            background: var(--bg-card);
+            padding: 24px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-card);
+            border: 1px solid transparent;
+            margin-bottom: 24px;
+            position: relative;
+            transition: var(--trans);
+        }
+
+        [data-theme="dark"] .card {
+            border: 1px solid var(--border);
+        }
+
+        h3 {
+            margin: 0 0 20px 0;
+            font-size: 15px;
+            color: var(--text-main);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.01em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-item {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-label {
+            color: var(--text-sub);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .stat-val {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-main);
+            font-family: var(--font-main);
+            letter-spacing: -0.5px;
+            margin: 6px 0;
+        }
+
+        .stat-trend {
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+            color: var(--text-sub);
+            opacity: 0.8;
+        }
+
+        .stat-item i.bg-icon {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            font-size: 64px;
+            opacity: 0.03;
+            transform: rotate(-10deg);
+            pointer-events: none;
+            color: var(--text-main);
+        }
+
+        /* 核心布局修复：移动端强制单列堆叠，确保图表卡片全宽 */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .chart-box {
+            height: 320px;
+            width: 100%;
+            position: relative;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 100%;
+            }
+
+            /* 强制单列 */
+        }
+
+        /* 关键修复：表格容器最小宽度，确保移动端不重叠，启用横向滚动 */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+        }
+
+        .table-container table {
+            min-width: 600px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            white-space: nowrap;
+        }
+
+        th {
+            text-align: left;
+            padding: 14px 20px;
+            color: var(--text-sub);
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--input-bg);
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            color: var(--text-main);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: var(--input-bg);
+        }
+
+        .mini-chart-container {
+            width: 100px;
+            height: 32px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .speed-text {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            width: 70px;
+            text-align: right;
+        }
+
+        .group-header {
+            background: var(--input-bg);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .group-header:hover {
+            background: var(--border);
+        }
+
+        .group-header td {
+            padding: 10px 20px;
+            font-weight: 600;
+            color: var(--text-sub);
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .group-icon {
+            transition: transform 0.2s;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        .group-collapsed .group-icon {
+            transform: rotate(-90deg);
+        }
+
+        .badge {
+            padding: 3px 8px;
+            border-radius: 99px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid transparent;
+        }
+
+        .badge.success {
+            background: var(--success-bg);
+            color: var(--success-text);
+            border-color: rgba(16, 185, 129, 0.1);
+        }
+
+        .badge.danger {
+            background: var(--danger-bg);
+            color: var(--danger-text);
+            border-color: rgba(239, 68, 68, 0.1);
+        }
+
+        .badge.warning {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+            border-color: rgba(245, 158, 11, 0.1);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .status-dot.pulse {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        .grid-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            align-items: end;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-sub);
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--input-bg);
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-light);
+            background: var(--bg-card);
+        }
+
+        /* 开关样式优化 */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            vertical-align: middle;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--primary);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13.5px;
+            font-weight: 500;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.secondary {
+            background: var(--bg-body);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        .btn.secondary:hover {
+            background: var(--input-bg);
+            border-color: var(--text-sub);
+        }
+
+        .btn.danger {
+            background: var(--danger-bg);
+            color: var(--danger-text);
+            border: 1px solid rgba(239, 68, 68, 0.1);
+        }
+
+        .btn.danger:hover {
+            background: var(--danger);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .btn.warning {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+            border: 1px solid rgba(245, 158, 11, 0.1);
+        }
+
+        .btn.warning:hover {
+            background: var(--warning);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .btn.success {
+            background: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid rgba(16, 185, 129, 0.1);
+        }
+
+        .btn.success:hover {
+            background: var(--success);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .btn.icon {
+            padding: 0;
+            width: 34px;
+            height: 34px;
+            font-size: 16px;
+            border-radius: 8px;
+        }
+
+        .progress {
+            width: 100%;
+            height: 5px;
+            background: var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .terminal-window {
+            background: #0f172a;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #1e293b;
+            font-family: var(--font-mono);
+        }
+
+        .terminal-header {
+            background: #1e293b;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .dot.red {
+            background: #ef4444;
+        }
+
+        .dot.yellow {
+            background: #f59e0b;
+        }
+
+        .dot.green {
+            background: #10b981;
+        }
+
+        .terminal-body {
+            padding: 20px;
+            color: #e2e8f0;
+            font-size: 13px;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        .copy-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.2s;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            margin: 10vh auto;
+            padding: 32px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border);
+            transform: scale(0.95);
+            animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            position: relative;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        @keyframes scaleIn {
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-sub);
+            transition: .2s;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--input-bg);
+        }
+
+        .close-modal:hover {
+            color: var(--text-main);
+            transform: rotate(90deg);
+        }
+
+        .mobile-nav {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .header {
+                padding: 0 20px;
+                height: 60px;
+            }
+
+            .content {
+                padding: 20px 16px 80px 16px;
+            }
+
+            .mobile-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                background: var(--bg-card);
+                border-top: 1px solid var(--border);
+                height: 60px;
+                z-index: 100;
+                justify-content: space-around;
+                padding-bottom: env(safe-area-inset-bottom);
+                align-items: center;
+            }
+
+            .nav-btn {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                color: var(--text-sub);
+                font-size: 10px;
+                gap: 2px;
+                height: 100%;
+            }
+
+            .nav-btn.active {
+                color: var(--primary);
+            }
+
+            .nav-btn i {
+                font-size: 20px;
+            }
+
+            .card {
+                padding: 16px;
+            }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #0f172a;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 13px;
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .toast.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+            bottom: 80px;
+        }
+    </style>
+    <script>
+        // Critical UI Functions - Safe Mode
+        // Defined here to ensure navigation works even if main script fails
+        window.onerror = function (msg, url, line, col, error) {
+            console.error("Global JS Error:", msg, url, line, col, error);
+            const banner = document.getElementById('js-error-banner');
+            const txt = document.getElementById('js-error-msg');
+            if (banner && txt) {
+                banner.style.display = 'block';
+                txt.innerText = msg + " (Ln: " + line + ")";
+            }
+            return false; // Let default handler run too
+        };
+
+        window.showToast = function (msg, type) {
+            const box = document.getElementById('toast');
+            if (!box) return;
+            const icon = document.getElementById('t-icon');
+            const tMsg = document.getElementById('t-msg');
+            if (tMsg) tMsg.innerText = msg;
+            box.className = 'toast show';
+            if (icon) {
+                if (type === 'warn') { icon.className = 'ri-error-warning-fill'; icon.style.color = '#fbbf24'; }
+                else if (type === 'success') { icon.className = 'ri-checkbox-circle-fill'; icon.style.color = '#34d399'; }
+                else { icon.className = 'ri-information-fill'; icon.style.color = '#60a5fa'; }
+            }
+            setTimeout(() => box.className = 'toast', 2500);
+        };
+
+        window.toggleTheme = function () {
+            const html = document.documentElement;
+            const curr = html.getAttribute('data-theme');
+            const next = curr === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            if (typeof updateChartTheme === 'function') updateChartTheme(next);
+            const icon = document.getElementById('theme-icon');
+            if (icon) icon.className = next === 'dark' ? 'ri-moon-line' : 'ri-sun-line';
+        };
+
+        window.nav = function (id, el) {
+            try {
+                document.querySelectorAll('.page').forEach(e => e.classList.remove('active'));
+                const target = document.getElementById(id);
+                if (!target) { console.error("Target page not found:", id); return; }
+                target.classList.add('active');
+
+                const titles = { 'dashboard': '仪表盘', 'deploy': '节点部署', 'rules': '转发规则', 'logs': '系统日志', 'settings': '系统配置' };
+                const titleEl = document.getElementById('page-text');
+                if (titleEl) titleEl.innerText = titles[id] || 'GoRelay';
+
+                document.querySelectorAll('.sidebar .item').forEach(i => i.classList.remove('active'));
+                if (el) el.classList.add('active');
+                else { const t = document.querySelector('.sidebar .item[onclick*="' + id + '"]'); if (t) t.classList.add('active'); }
+
+                document.querySelectorAll('.mobile-nav .nav-btn').forEach(b => b.classList.remove('active'));
+                const mBtn = document.querySelector('.mobile-nav .nav-btn[onclick*="' + id + '"]');
+                if (mBtn) mBtn.classList.add('active');
+
+                if (history.pushState) history.pushState(null, null, '#' + id); else location.hash = '#' + id;
+            } catch (e) {
+                console.error("Nav Error:", e);
+                window.showToast("Nav Error: " + e.message, "warn");
+            }
+        };
+
+        window.initTab = function () { const hash = window.location.hash.substring(1); if (hash && document.getElementById(hash)) window.nav(hash); };
+
+        window.showConfirm = function (title, msg, type, cb) {
+            const t = document.getElementById('c_title'); if (t) t.innerText = title;
+            const m = document.getElementById('c_msg'); if (m) m.innerHTML = msg;
+            const btn = document.getElementById('c_btn');
+            const icon = document.getElementById('c_icon');
+            if (btn && icon) {
+                if (type === 'danger') { btn.className = 'btn danger'; btn.innerText = '确认删除'; icon.innerText = '🗑️'; }
+                else if (type === 'warning') { btn.className = 'btn warning'; btn.innerText = '确认操作'; icon.innerText = '⚡'; }
+                else { btn.className = 'btn'; btn.innerText = '确认执行'; icon.innerText = '✨'; }
+                btn.onclick = function () { window.closeConfirm(); cb(); };
+            }
+            const modal = document.getElementById('confirmModal'); if (modal) modal.style.display = 'block';
+        };
+
+        window.closeConfirm = function () { const m = document.getElementById('confirmModal'); if (m) m.style.display = 'none'; };
+
+        window.copyText = function (txt) {
+            if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(txt).then(() => window.showToast("已复制", "success"));
+            else {
+                const ta = document.createElement("textarea"); ta.value = txt; ta.style.position = "fixed"; ta.style.left = "-9999px";
+                document.body.appendChild(ta); ta.focus(); ta.select();
+                try { document.execCommand('copy'); window.showToast("已复制", "success"); } catch (e) { window.showToast("复制失败", "warn"); }
+                document.body.removeChild(ta);
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', window.initTab);
+    </script>
+</head>
+
+<body>
+
+    <div class="bg-decor">
+        <div class="shape shape-circle s1"></div>
+        <div class="shape shape-circle s2"></div>
+        <div class="shape shape-circle shape-c1"></div>
+        <div class="shape shape-star shape-st1"></div>
+        <div class="shape shape-circle shape-c2"></div>
+        <div class="shape shape-star shape-st2"></div>
+
+        <div class="shape shape-circle shape-c3"></div>
+        <div class="shape shape-star shape-st3"></div>
+        <div class="shape shape-circle shape-c4"></div>
+        <div class="shape shape-star shape-st4"></div>
+        <div class="shape shape-circle shape-c5"></div>
+        <div class="shape shape-star shape-st5"></div>
+        <div class="shape shape-circle shape-c6"></div>
+        <div class="shape shape-star shape-st6"></div>
+        <div class="shape shape-circle shape-c7"></div>
+    </div>
+
+    <div id="toast" class="toast"><i id="t-icon"></i><span id="t-msg"></span></div>
+
+    <div class="sidebar">
+        <div class="brand">
+            <div class="brand-icon"><i class="ri-globe-line"></i></div> GoRelay Pro
+        </div>
+        <div class="menu">
+            <div class="item active" onclick="nav('dashboard',this)"><i class="ri-dashboard-line"></i> 概览监控</div>
+            <div class="item" onclick="nav('rules',this)"><i class="ri-route-line"></i> 转发管理</div>
+            <div class="item" onclick="nav('deploy',this)"><i class="ri-server-line"></i> 节点部署</div>
+            <div class="item" onclick="nav('logs',this)"><i class="ri-file-list-2-line"></i> 系统日志</div>
+            <div class="item" onclick="nav('settings',this)">
+                <i class="ri-settings-4-line"></i> 系统设置
+                <span id="settings-badge" class="status-dot pulse"
+                    style="background:var(--danger);display:none;margin-left:auto"></span>
+            </div>
+        </div>
+        <div class="user-panel">
+            <div class="user-card">
+                <div class="avatar">{{printf "%.1s" .User}}</div>
+                <div style="flex:1;overflow:hidden">
+                    <div
+                        style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                        {{.User}}</div>
+                    <div style="font-size:11px;color:var(--text-sub)">管理员</div>
+                </div>
+                <a href="/logout" class="btn-logout"><i class="ri-logout-box-r-line"></i></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main">
+        <header class="header">
+            <div class="page-title"><span id="page-text">仪表盘</span></div>
+            <div style="display:flex;gap:12px;align-items:center">
+                <a href="https://github.com/TerrySiu98/relay" target="_blank" class="theme-toggle" title="GitHub"><i
+                        class="ri-github-line"></i></a>
+                <button class="theme-toggle" onclick="toggleTheme()"><i class="ri-moon-line"
+                        id="theme-icon"></i></button>
+            </div>
+        </header>
+
+        <div class="content"
+            onscroll="document.querySelector('.main').classList.toggle('scrolled', this.scrollTop > 10)">
+            <div id="dashboard" class="page active">
+                <div class="stats-grid">
+                    <div class="card stat-item">
+                        <div class="stat-label">累计总流量</div>
+                        <div class="stat-val" id="stat-total-traffic" style="color:#818cf8">{{formatBytes
+                            .TotalTraffic}}</div>
+                        <div class="stat-trend"><i class="ri-database-2-line"></i> 数据中继总量</div>
+                        <i class="ri-exchange-line bg-icon"></i>
+                    </div>
+                    <div class="card stat-item">
+                        <div class="stat-label">实时下载 (Rx)</div>
+                        <div class="stat-val" id="speed-rx" style="color:#06b6d4">0 B/s</div>
+                        <div class="stat-trend"><i class="ri-arrow-down-circle-line"></i> 当前下行带宽</div>
+                        <i class="ri-download-cloud-2-line bg-icon"></i>
+                    </div>
+                    <div class="card stat-item">
+                        <div class="stat-label">实时上传 (Tx)</div>
+                        <div class="stat-val" id="speed-tx" style="color:#8b5cf6">0 B/s</div>
+                        <div class="stat-trend"><i class="ri-arrow-up-circle-line"></i> 当前上行带宽</div>
+                        <i class="ri-upload-cloud-2-line bg-icon"></i>
+                    </div>
+                    <div class="card stat-item">
+                        <div class="stat-label">节点状态</div>
+                        <div class="stat-val" style="color:#10b981">{{len .Agents}} <span
+                                style="font-size:16px;color:var(--text-sub);font-weight:600">/ {{len .Rules}}</span>
+                        </div>
+                        <div class="stat-trend"><i class="ri-server-line"></i> 在线 / 规则总数</div>
+                        <i class="ri-cpu-line bg-icon"></i>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <h3><i class="ri-pulse-line" style="color:var(--primary)"></i> 实时流量趋势</h3>
+                        <div class="chart-box"><canvas id="trafficChart"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <h3><i class="ri-pie-chart-line" style="color:#f472b6"></i> 流量分布 (Top 5)</h3>
+                        <div class="chart-box" style="display:flex;justify-content:center"><canvas
+                                id="pieChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="ri-table-line" style="color:var(--warning)"></i> 实时转发监控</h3>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>规则名称</th>
+                                    <th style="width:25%">上传趋势 (Tx)</th>
+                                    <th style="width:25%">下载趋势 (Rx)</th>
+                                    <th style="width:15%">总流量</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rule-monitor-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="rules" class="page">
+                <div class="card">
+                    <h3><i class="ri-add-circle-line" style="color:var(--primary)"></i> 新建转发规则</h3>
+                    <form action="/add" method="POST">
+                        <div class="grid-form">
+                            <div class="form-group"
+                                style="grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                                <span style="font-size:12px;color:var(--text-sub);font-weight:600">快速预设</span>
+                                <button type="button" class="btn secondary" style="height:34px"
+                                    onclick="applyLegacyPreset('standard')">标准 TCP</button>
+                                <button type="button" class="btn secondary" style="height:34px"
+                                    onclick="applyLegacyPreset('udp')">UDP 服务</button>
+                                <span id="legacy-rule-hint" style="font-size:12px;color:var(--text-sub)">建议先使用标准
+                                    TCP</span>
+                            </div>
+                            <div class="form-group"><label>分组名称</label><input name="group"
+                                    placeholder="例如: 业务A (留空为默认)"></div>
+                            <div class="form-group"><label>备注名称</label><input name="note" placeholder="例如: 远程桌面"
+                                    required></div>
+                            <div class="form-group"><label>入口节点</label><select name="entry_agent">{{range .Agents}}
+                                    <option value="{{.Name}}">{{.Name}}</option>{{end}}
+                                </select></div>
+                            <div class="form-group"><label>入口端口</label><input type="number" name="entry_port"
+                                    placeholder="1024-65535" required></div>
+                            <div class="form-group"><label>出口节点</label><select name="exit_agent">{{range .Agents}}
+                                    <option value="{{.Name}}">{{.Name}}</option>{{end}}
+                                </select></div>
+                            <div class="form-group"><label>目标 IP (支持多IP/域名)</label><input name="target_ip"
+                                    placeholder="192.168.1.1, 10.0.0.1,[ IPV6 ]" required></div>
+                            <div class="form-group"><label>目标端口</label><input type="number" name="target_port" required>
+                            </div>
+
+                            <div class="form-group"><label>流量限制 (GB)</label><input type="number" step="0.1"
+                                    name="traffic_limit" placeholder="0 为不限"></div>
+                            <div class="form-group"><label>带宽限速 (MB/s)</label><input type="number" step="0.1"
+                                    name="speed_limit" placeholder="0 为不限"></div>
+                            <div class="form-group"><label>协议类型</label><select name="protocol" id="legacy_new_proto">
+                                    <option value="tcp">TCP (推荐)</option>
+                                    <option value="udp">UDP</option>
+                                    <option value="both">TCP + UDP</option>
+                                </select></div>
+
+
+
+                            <div class="form-group"><button class="btn" style="width:100%"><i class="ri-save-line"></i>
+                                    保存并生效</button></div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3><i class="ri-list-settings-line"></i> 规则列表</h3>
+                    <div
+                        style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                            <label
+                                style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-sub)"><input
+                                    type="checkbox" id="bulk_select_all" onchange="toggleAllRules(this.checked)">
+                                全选</label>
+                            <span id="bulk_selected_count" class="badge"
+                                style="background:var(--input-bg);color:var(--text-sub);border:1px solid var(--border)">0
+                                已选</span>
+                        </div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap">
+                            <button class="btn secondary" style="height:34px" type="button"
+                                onclick="bulkSetDisabled(false)">批量启用</button>
+                            <button class="btn secondary" style="height:34px" type="button"
+                                onclick="bulkSetDisabled(true)">批量暂停</button>
+
+                            <button class="btn warning" style="height:34px" type="button"
+                                onclick="bulkResetTraffic()">批量清零</button>
+                            <button class="btn danger" style="height:34px" type="button"
+                                onclick="bulkDeleteRules()">批量删除</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:38px"></th>
+                                    <th>链路信息</th>
+                                    <th>目标地址 & 延迟</th>
+                                    <th>流量监控</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{$currentGroup := "INIT_h7&^"}}
+                                {{range .Rules}}
+                                {{if ne .Group $currentGroup}}
+                                <tr class="group-header" onclick="toggleGroup(this)" data-group="{{.Group}}">
+                                    <td colspan="5">
+                                        <i class="ri-arrow-down-s-line group-icon"></i>
+                                        <i class="ri-folder-3-fill" style="margin-right:4px"></i>
+                                        {{if .Group}}{{.Group}}{{else}}默认分组{{end}}
+                                    </td>
+                                </tr>
+                                {{$currentGroup = .Group}}
+                                {{end}}
+                                <tr class="rule-row" data-group="{{.Group}}" data-protocol="{{.Protocol}}"
+                                    style="{{if .Disabled}}opacity:0.6;filter:grayscale(1);{{end}}">
+                                    <td><input type="checkbox" class="rule-bulk-select" value="{{.ID}}"
+                                            onchange="updateBulkSelectedCount()"></td>
+                                    <td>
+                                        <div style="font-weight:600;font-size:14px;margin-bottom:4px">
+                                            {{if .Note}}{{.Note}}{{else}}未命名规则{{end}}
+                                        </div>
+                                        <div
+                                            style="font-size:12px;color:var(--text-sub);display:flex;align-items:center;gap:6px">
+                                            <span class="badge"
+                                                style="background:var(--input-bg);color:var(--text-sub);border:1px solid var(--border)">{{.EntryAgent}}:{{.EntryPort}}</span>
+                                            <i class="ri-arrow-right-line"
+                                                style="color:var(--text-sub);font-size:12px"></i>
+                                            <span class="badge"
+                                                style="background:var(--input-bg);color:var(--text-sub);border:1px solid var(--border)">{{.ExitAgent}}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="font-family:var(--font-mono);font-size:13px">
+                                            {{.TargetIP}}:{{.TargetPort}}</div>
+                                        <div style="font-size:12px;margin-top:4px;display:flex;align-items:center;gap:5px;color:var(--text-sub)"
+                                            id="rule-latency-{{.ID}}"><i class="ri-loader-4-line ri-spin"></i> 检测中...
+                                        </div>
+                                    </td>
+                                    <td style="min-width:180px">
+                                        <div
+                                            style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+                                            <span><i class="ri-user-3-line"></i> <span
+                                                    id="rule-uc-{{.ID}}">{{.UserCount}}</span></span>
+                                            <span id="rule-traffic-{{.ID}}"
+                                                style="font-family:var(--font-mono);font-weight:600">{{formatBytes (add
+                                                .TotalTx .TotalRx)}}</span>
+                                        </div>
+                                        {{if gt .TrafficLimit 0}}
+                                        <div class="progress">
+                                            <div id="rule-bar-{{.ID}}" class="progress-bar"
+                                                style="width:{{percent .TotalTx .TotalRx .TrafficLimit}}%"></div>
+                                        </div>
+                                        <div style="font-size:11px;color:var(--text-sub);margin-top:2px;text-align:right"
+                                            id="rule-limit-text-{{.ID}}">限 {{formatBytes .TrafficLimit}}</div>
+                                        {{else}}
+                                        <div class="progress">
+                                            <div class="progress-bar"
+                                                style="width:100%;background:var(--success);opacity:0.3"></div>
+                                        </div>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        {{if .Disabled}}<span class="badge"
+                                            style="background:var(--input-bg);color:var(--text-sub)">已暂停</span>
+                                        {{else if and (gt .TrafficLimit 0) (ge (add .TotalTx .TotalRx)
+                                        .TrafficLimit)}}<span class="badge danger">流量耗尽</span>
+                                        {{else}}<span class="badge success"><span class="status-dot pulse"
+                                                id="rule-status-dot-{{.ID}}"></span> 运行中</span>{{end}}
+                                    </td>
+                                    <td>
+                                        <div style="display:flex;gap:6px">
+                                            <button class="btn icon secondary" onclick="toggleRule('{{.ID}}')"
+                                                title="切换状态">{{if .Disabled}}<i class="ri-play-fill"
+                                                    style="color:var(--success)"></i>{{else}}<i class="ri-pause-fill"
+                                                    style="color:var(--warning)"></i>{{end}}</button>
+                                            <button class="btn icon secondary"
+                                                onclick="openEdit('{{.ID}}','{{.Group}}','{{.Note}}','{{.EntryAgent}}','{{.EntryPort}}','{{.ExitAgent}}','{{.TargetIP}}','{{.TargetPort}}','{{.Protocol}}','{{.TrafficLimit}}','{{.SpeedLimit}}')"
+                                                title="编辑"><i class="ri-edit-line"></i></button>
+                                            <button class="btn icon secondary" onclick="resetTraffic('{{.ID}}')"
+                                                title="重置"><i class="ri-refresh-line"></i></button>
+                                            <button class="btn icon danger" onclick="delRule('{{.ID}}')" title="删除"><i
+                                                    class="ri-delete-bin-line"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="deploy" class="page">
+                <div class="card">
+                    <h3><i class="ri-terminal-box-line" style="color:var(--text-main)"></i> 节点安装向导</h3>
+                    <p style="color:var(--text-sub);font-size:14px;line-height:1.6;margin-bottom:24px">
+                        请在您的 VPS 或服务器（支持 Linux）上执行以下命令以安装 Agent 客户端。Agent 安装后将自动连接至本面板。
+                    </p>
+
+                    <div
+                        style="background:var(--input-bg);padding:24px;border-radius:16px;border:1px solid var(--border)">
+                        <div class="grid-form"
+                            style="margin-bottom:24px;grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                            <div class="form-group"><label>1. 节点名称</label><input id="agentName" value="Node-01"></div>
+                            <div class="form-group"><label>2. 连接方式</label><select id="addrType">
+                                    <option value="domain">域名 ({{.MasterDomain}})</option>
+                                    <option value="v4">IPv4 ({{.MasterIP}})</option>
+                                    <option value="v6">IPv6 ({{.MasterIPv6}})</option>
+                                </select></div>
+                            <div class="form-group">
+                                <label>3. 通信端口</label>
+                                <select id="connPort">
+                                    {{range .Ports}}<option value="{{.}}">{{.}}</option>{{end}}
+                                    <option disabled>──────────</option>
+                                    <option disabled value="">(去设置页添加)</option>
+                                </select>
+                            </div>
+                            <div class="form-group"><label>4. 架构</label><select id="archType">
+                                    <option value="amd64">Linux AMD64 (x86_64)</option>
+                                    <option value="arm64">Linux ARM64 (aarch64)</option>
+                                </select></div>
+                        </div>
+                        <button class="btn" onclick="genCmd()"><i class="ri-magic-line"></i> 生成安装命令</button>
+
+                        <div class="terminal-window" style="margin-top:24px">
+                            <div class="terminal-header">
+                                <div class="dot red"></div>
+                                <div class="dot yellow"></div>
+                                <div class="dot green"></div>
+                                <span style="color:#64748b;font-size:12px;margin-left:auto">bash</span>
+                            </div>
+                            <div class="terminal-body">
+                                <div class="copy-overlay"><button class="btn icon secondary"
+                                        style="background:rgba(255,255,255,0.1);color:#fff;border:none"
+                                        onclick="copyCmd()" title="复制"><i class="ri-file-copy-line"></i></button></div>
+                                <span style="color:#10b981">root@server:~$</span> <span id="cmdText"
+                                    style="opacity:0.8">请先点击上方按钮生成命令...</span><span
+                                    style="animation:blink 1s infinite"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="ri-server-line"></i> 在线节点状态</h3>
+                    <div class="table-container">
+                        {{if .Agents}}
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>状态</th>
+                                    <th>节点名称</th>
+                                    <th>别名</th>
+                                    <th>远程 IP</th>
+                                    <th>系统负载 (Load)</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .Agents}}
+                                <tr>
+                                    <td><span class="badge success"><span class="status-dot pulse"></span> 在线</span>
+                                    </td>
+                                    <td>
+                                        <div style="font-weight:600">{{.Name}}</div>
+                                    </td>
+                                    <td>
+                                        <div style="display:flex;align-items:center;gap:6px">
+                                            <span class="badge"
+                                                style="background:var(--input-bg);color:var(--text-sub);border:1px solid var(--border)"
+                                                id="alias-text-{{.Name}}">{{if index $.Config.AgentAliases
+                                                .Name}}{{index $.Config.AgentAliases .Name}}{{else}}-{{end}}</span>
+                                            <button class="btn icon secondary"
+                                                onclick="editAlias('{{.Name}}','{{index $.Config.AgentAliases .Name}}')"
+                                                title="设置别名"><i class="ri-edit-2-line"></i></button>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge"
+                                            style="font-family:var(--font-mono);background:var(--input-bg);color:var(--text-sub);cursor:pointer"
+                                            onclick="copyText('{{.RemoteIP}}')">{{.RemoteIP}}</span></td>
+                                    <td style="width:240px">
+                                        <div style="display:flex;align-items:center;gap:12px">
+                                            <div class="progress" style="margin:0;flex:1">
+                                                <div class="progress-bar" id="load-bar-{{.Name}}" style="width:0%">
+                                                </div>
+                                            </div>
+                                            <span id="load-text-{{.Name}}"
+                                                style="font-size:12px;font-family:var(--font-mono);min-width:50px;text-align:right">0.0</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="display:flex;gap:6px">
+                                            <button class="btn icon warning" onclick="updateAgent('{{.Name}}')"
+                                                title="更新"><i class="ri-refresh-line"></i></button>
+                                            <button class="btn icon danger" onclick="delAgent('{{.Name}}')"
+                                                title="卸载"><i class="ri-delete-bin-line"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                        {{else}}
+                        <div style="padding:48px 0;text-align:center;color:var(--text-sub);font-size:13px">
+                            <i class="ri-ghost-line"
+                                style="font-size:32px;display:block;margin-bottom:12px;opacity:0.5"></i>
+                            暂无在线节点，请在上方生成命令进行部署
+                        </div>
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+
+            <div id="logs" class="page">
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+                        <h3><i class="ri-file-history-line"></i> 系统操作日志</h3>
+                        <a href="/export_logs" class="btn secondary" style="text-decoration:none;font-size:13px"><i
+                                class="ri-download-line"></i> 导出</a>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>IP 来源</th>
+                                    <th>操作类型</th>
+                                    <th>详情内容</th>
+                                </tr>
+                            </thead>
+                            <tbody id="log-table-body">
+                                {{range .Logs}}
+                                <tr>
+                                    <td style="font-family:var(--font-mono);color:var(--text-sub)">{{.Time}}</td>
+                                    <td>{{.IP}}</td>
+                                    <td><span class="badge"
+                                            style="background:var(--input-bg);color:var(--text-main);border:1px solid var(--border)">{{.Action}}</span>
+                                    </td>
+                                    <td style="color:var(--text-sub)">{{.Msg}}</td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="settings" class="page">
+                <div class="card" style="max-width:800px">
+                    <h3><i class="ri-settings-line"></i> 系统全局配置</h3>
+                    <form action="/update_settings" method="POST">
+                        <div class="grid-form" style="grid-template-columns: 1fr; gap:24px">
+
+                            <div
+                                style="display:grid;grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));gap:20px">
+                                <div class="form-group"><label>修改密码</label><input type="password" name="password"
+                                        placeholder="留空则不修改"></div>
+                                <div class="form-group"><label>通信 Token</label><input name="token" value="{{.Token}}">
+                                </div>
+                            </div>
+
+                            <div
+                                style="background:var(--input-bg);padding:20px;border-radius:12px;border:1px dashed var(--border);grid-column:1/-1">
+                                <h4 style="margin:0 0 10px 0;font-size:14px;"><i class="ri-plug-line"></i> Agent 监听端口
+                                </h4>
+                                <div class="form-group" style="margin:0">
+                                    <label style="font-weight:400;font-size:12px">Master 监听的端口 (逗号分隔，例如:
+                                        9999,10086)</label>
+                                    <input name="agent_ports"
+                                        value="{{if .Config.AgentPorts}}{{.Config.AgentPorts}}{{else}}9999{{end}}"
+                                        placeholder="9999">
+                                    <div style="font-size:12px;color:var(--warning-text);margin-top:6px;"><i
+                                            class="ri-alert-line"></i> 修改后需手动重启服务</div>
+                                </div>
+                            </div>
+
+                            <div
+                                style="background:var(--input-bg);padding:20px;border-radius:12px;border:1px solid var(--border);grid-column:1/-1">
+                                <h4 style="margin:0 0 16px 0;font-size:14px;color:#3b82f6"><i
+                                        class="ri-telegram-fill"></i> Telegram 通知</h4>
+                                <div class="grid-form" style="gap:16px;grid-template-columns: 1fr 1fr;">
+                                    <div class="form-group"><label>Bot Token</label><input name="tg_bot_token"
+                                            value="{{.Config.TgBotToken}}"></div>
+                                    <div class="form-group"><label>Chat ID</label><input name="tg_chat_id"
+                                            value="{{.Config.TgChatID}}"></div>
+                                </div>
+                            </div>
+
+                            <div
+                                style="background:var(--input-bg);padding:20px;border-radius:12px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;grid-column:1/-1">
+                                <div>
+                                    <h4 style="margin:0 0 4px 0;font-size:14px">双因素认证 (2FA)</h4>
+                                    <div style="font-size:12px;color:var(--text-sub)">Google Authenticator 登录保护</div>
+                                </div>
+                                <div>
+                                    {{if .Config.TwoFAEnabled}}
+                                    <button type="button" class="btn danger" onclick="disable2FA()">关闭</button>
+                                    {{else}}
+                                    <button type="button" class="btn" onclick="enable2FA()">开启</button>
+                                    {{end}}
+                                </div>
+                            </div>
+
+                            <div
+                                style="background:rgba(16,185,129,0.05);padding:20px;border-radius:12px;border:1px solid rgba(16,185,129,0.2);grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+                                <div>
+                                    <h4 style="margin:0 0 4px 0;font-size:14px;color:#10b981">系统更新</h4>
+                                    <div style="font-size:12px;color:var(--text-sub)">当前: {{.Version}} <span
+                                            id="new-version-text"
+                                            style="color:#f59e0b;display:none;margin-left:8px;font-weight:600">发现新版本</span>
+                                    </div>
+                                </div>
+                                <div style="display:flex;gap:8px">
+                                    <button type="button" class="btn secondary" onclick="checkUpdate(true)"
+                                        id="btn-check-update">检查更新</button>
+                                    <button type="button" class="btn success" onclick="updateSystem()" id="btn-update"
+                                        style="display:none">立即更新</button>
+                                </div>
+                            </div>
+
+                            <div class="grid-form"
+                                style="gap:16px;margin-top:10px;grid-column:1/-1;grid-template-columns: 1fr 1fr 1fr;">
+                                <div class="form-group"><label>面板域名</label><input name="master_domain"
+                                        value="{{.MasterDomain}}"></div>
+                                <div class="form-group"><label>IPv4</label><input name="master_ip"
+                                        value="{{.MasterIP}}"></div>
+                                <div class="form-group"><label>IPv6</label><input name="master_ipv6"
+                                        value="{{.MasterIPv6}}"></div>
+                            </div>
+
+                            <div
+                                style="display:flex;gap:12px;margin-top:16px;border-top:1px solid var(--border);padding-top:24px;grid-column:1/-1">
+                                <button class="btn" style="flex:2;height:44px">保存配置</button>
+                                <a href="/download_config" class="btn secondary" style="flex:1;height:44px"
+                                    title="备份数据库"><i class="ri-database-2-line"></i></a>
+                                <button type="button" class="btn warning" style="flex:1;height:44px"
+                                    onclick="restartService()" title="重启服务"><i class="ri-restart-line"></i></button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mobile-nav">
+        <div class="nav-btn active" onclick="nav('dashboard',this)"><i class="ri-dashboard-line"></i><span>概览</span>
+        </div>
+        <div class="nav-btn" onclick="nav('rules',this)"><i class="ri-route-line"></i><span>规则</span></div>
+        <div class="nav-btn" onclick="nav('deploy',this)"><i class="ri-server-line"></i><span>节点</span></div>
+        <div class="nav-btn" onclick="nav('logs',this)"><i class="ri-file-list-2-line"></i><span>日志</span></div>
+        <div class="nav-btn" onclick="nav('settings',this)"><i class="ri-settings-4-line"></i><span>设置</span></div>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeEdit()"><i class="ri-close-line"></i></span>
+            <h3 style="margin-top:0;font-size:18px">修改规则</h3>
+            <form action="/edit" method="POST">
+                <input type="hidden" name="id" id="e_id">
+                <div class="grid-form" style="grid-template-columns: 1fr 1fr; gap:20px">
+                    <div class="form-group"
+                        style="grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                        <span style="font-size:12px;color:var(--text-sub);font-weight:600">快速预设</span>
+                        <button type="button" class="btn secondary" style="height:34px"
+                            onclick="applyLegacyEditPreset('standard')">标准 TCP</button>
+                        <button type="button" class="btn secondary" style="height:34px"
+                            onclick="applyLegacyEditPreset('udp')">UDP 服务</button>
+                        <span id="legacy-edit-rule-hint" style="font-size:12px;color:var(--text-sub)">编辑后会自动热更新任务</span>
+                    </div>
+                    <div class="form-group"><label>分组</label><input name="group" id="e_group" placeholder="例如: 业务A">
+                    </div>
+                    <div class="form-group"><label>备注</label><input name="note" id="e_note"></div>
+                    <div class="form-group"><label>入口节点</label><select name="entry_agent" id="e_entry">{{range .Agents}}
+                            <option value="{{.Name}}">{{.Name}}</option>{{end}}
+                        </select></div>
+                    <div class="form-group"><label>入口端口</label><input type="number" name="entry_port" id="e_eport">
+                    </div>
+                    <div class="form-group"><label>出口节点</label><select name="exit_agent" id="e_exit">{{range .Agents}}
+                            <option value="{{.Name}}">{{.Name}}</option>{{end}}
+                        </select></div>
+                    <div class="form-group" style="grid-column: 1/-1"><label>目标地址 (IP/域名)</label><input name="target_ip"
+                            id="e_tip"></div>
+                    <div class="form-group"><label>目标端口</label><input type="number" name="target_port" id="e_tport">
+                    </div>
+                    <div class="form-group"><label>协议</label><select name="protocol" id="e_proto">
+                            <option value="tcp">TCP</option>
+                            <option value="udp">UDP</option>
+                            <option value="both">TCP+UDP</option>
+                        </select></div>
+                    <div class="form-group"><label>限额 (GB)</label><input type="number" step="0.1" name="traffic_limit"
+                            id="e_limit"></div>
+                    <div class="form-group"><label>限速 (MB/s)</label><input type="number" step="0.1" name="speed_limit"
+                            id="e_speed"></div>
+
+                    <div class="form-group" style="grid-column: 1/-1;margin-top:10px"><button class="btn"
+                            style="width:100%;height:44px">保存修改</button></div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="modal">
+        <div class="modal-content" style="max-width:380px;text-align:center;padding:32px">
+            <div style="font-size:48px;margin-bottom:16px;line-height:1" id="c_icon">⚠️</div>
+            <h3 style="justify-content:center;margin-bottom:8px;font-size:18px" id="c_title">确认操作</h3>
+            <p style="color:var(--text-sub);margin-bottom:24px;line-height:1.5" id="c_msg"></p>
+            <div style="display:flex;gap:12px">
+                <button class="btn secondary" style="flex:1" onclick="closeConfirm()">取消</button>
+                <button id="c_btn" class="btn danger" style="flex:1">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="twoFAModal" class="modal">
+        <div class="modal-content" style="text-align:center;max-width:340px">
+            <span class="close-modal" onclick="document.getElementById('twoFAModal').style.display='none'"><i
+                    class="ri-close-line"></i></span>
+            <h3 style="justify-content:center">绑定 2FA</h3>
+            <p style="font-size:13px;color:var(--text-sub);margin-bottom:20px">使用 Google Authenticator 扫描</p>
+            <div style="background:#fff;padding:12px;border-radius:16px;display:inline-block;margin-bottom:20px">
+                <img id="qrImage" style="width:160px;height:160px;display:block">
+            </div>
+            <div id="js-error-banner"
+                style="display:none;position:fixed;top:0;left:0;width:100%;background:#ef4444;color:white;padding:12px;z-index:99999;text-align:center;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,0.2)">
+                ⚠️ 面板脚本发生错误: <span id="js-error-msg"></span>
+            </div>
+
+            <!-- Move Chart.js to bottom and use async to prevent blocking -->
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" async></script>
+            <input id="twoFACode" placeholder="输入 6 位验证码"
+                style="text-align:center;letter-spacing:4px;font-size:18px;margin-bottom:20px;font-family:var(--font-mono)">
+            <button class="btn" onclick="verify2FA()" style="width:100%">验证并开启</button>
+        </div>
+    </div>
+
+    <script>
+        // Main Logic Script
+        // Errors here will be caught by the global handler in <head>
+
+        // Explicitly define nav to global window to avoid scope issues
+        // nav defined in head
+        window.nav = window.nav || function () { };
+
+        var m_domain = "{{.MasterDomain}}", m_v4 = "{{.MasterIP}}", m_v6 = "{{.MasterIPv6}}", token = "{{.Token}}", dwUrl = "{{.DownloadURL}}";
+        var lastRuleStats = {};
+        var ruleCharts = {};
+
+        // Hoist chart variables to global scope
+        var chart = null;
+        var pieChart = null;
+        var updateChartTheme = function (theme) { };
+
+        function createMiniChartConfig(color) {
+            const ctxGrad = document.createElement('canvas').getContext('2d').createLinearGradient(0, 0, 0, 32);
+            ctxGrad.addColorStop(0, color.replace(')', ', 0.3)').replace('rgb', 'rgba'));
+            ctxGrad.addColorStop(1, color.replace(')', ', 0)').replace('rgb', 'rgba'));
+
+            return {
+                type: 'line',
+                data: {
+                    labels: Array(15).fill(''),
+                    datasets: [{
+                        data: Array(15).fill(0),
+                        borderColor: color,
+                        backgroundColor: ctxGrad,
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: { x: { display: false }, y: { display: false, min: 0 } },
+                    elements: { line: { borderJoinStyle: 'round' } }
+                }
+            };
+        }
+
+        /* Global nav function defined above */
+
+        function initTab() { const hash = window.location.hash.substring(1); if (hash && document.getElementById(hash)) nav(hash); }
+        initTab();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const collapsed = JSON.parse(localStorage.getItem('collapsed_groups') || '[]');
+            collapsed.forEach(g => {
+                const header = document.querySelector('.group-header[data-group="' + g + '"]');
+                if (header) setGroupState(header, false);
+            });
+            checkUpdate();
+        });
+
+        function toggleGroup(header) {
+            const isCurrentlyCollapsed = header.classList.contains('group-collapsed');
+            setGroupState(header, isCurrentlyCollapsed);
+            const group = header.getAttribute('data-group');
+            let collapsed = JSON.parse(localStorage.getItem('collapsed_groups') || '[]');
+            if (isCurrentlyCollapsed) { collapsed = collapsed.filter(i => i !== group); } else { if (!collapsed.includes(group)) collapsed.push(group); }
+            localStorage.setItem('collapsed_groups', JSON.stringify(collapsed));
+        }
+
+        function setGroupState(header, expand) {
+            const group = header.getAttribute('data-group');
+            const rows = Array.from(document.querySelectorAll('.rule-row')).filter(row => row.getAttribute('data-group') === group);
+            if (!expand) { header.classList.add('group-collapsed'); rows.forEach(r => r.style.display = 'none'); }
+            else { header.classList.remove('group-collapsed'); rows.forEach(r => r.style.display = 'table-row'); }
+        }
+
+        // UI functions (copyText, toggleTheme, showToast, showConfirm) moved to head for safety
+
+        function restartService() {
+            showConfirm("重启服务", "确定要重启面板服务吗？连接将短暂中断。", "warning", () => {
+                fetch('/restart', { method: 'POST' }).then(() => {
+                    showToast("系统正在重启...", "warn");
+                    setTimeout(() => location.reload(), 3000);
+                }).catch(() => { showToast("请求发送失败", "warn"); });
+            });
+        }
+
+        function checkUpdate(manual) {
+            fetch('/check_update').then(r => r.json()).then(d => {
+                const has = !!d.has_update;
+                const latest = d.latest_version || '';
+                const current = d.current || '';
+                const badge = document.getElementById('settings-badge');
+                const txt = document.getElementById('new-version-text');
+                const updateBtn = document.getElementById('btn-update');
+
+                if (has && latest) {
+                    if (badge) badge.style.display = 'inline-block';
+                    if (txt) { txt.style.display = 'inline'; txt.innerText = '发现新版本 ' + latest; }
+                    if (updateBtn) updateBtn.style.display = 'inline-flex';
+                    if (manual) showToast('发现新版本 ' + latest, 'success');
+                } else {
+                    if (txt) { txt.style.display = 'inline'; txt.innerText = current ? ('当前已是最新版本 ' + current) : '当前已是最新版本'; }
+                    if (updateBtn) updateBtn.style.display = 'none';
+                    if (manual) showToast('当前已是最新版本', 'success');
+                }
+            }).catch(() => {
+                if (manual) showToast('检查更新失败', 'warn');
+            });
+        }
+
+        function updateSystem() {
+            fetch('/check_update').then(r => r.json()).then(d => {
+                if (!d.has_update) {
+                    showToast('当前已是最新版本', 'success');
+                    return;
+                }
+                showConfirm("系统更新", "下载新版本并重启面板吗？", "warning", () => {
+                    const btn = document.getElementById('btn-update'); btn.disabled = true; btn.innerText = '更新中...';
+                    fetch('/update_sys', { method: 'POST' }).then(r => r.json()).then(d2 => {
+                        if (d2.success) { showToast("更新成功，重启中...", "success"); setTimeout(() => location.reload(), 5000); }
+                        else { showToast("更新失败: " + d2.error, "warn"); btn.disabled = false; btn.innerText = '立即更新'; }
+                    }).catch(() => { showToast("请求失败", "warn"); btn.disabled = false; btn.innerText = '立即更新'; });
+                });
+            }).catch(() => {
+                showToast('检查更新失败', 'warn');
+            });
+        }
+
+        function updateAgent(name) {
+            showConfirm("更新节点", "确定要远程更新节点 <b>" + name + "</b> 吗？", "warning", () => {
+                fetch('/update_agent?name=' + name, { method: 'POST' }).then(r => {
+                    if (r.ok) showToast("指令已发送", "success"); else showToast("发送失败", "warn");
+                });
+            });
+        }
+
+        function delAgent(name) { showConfirm("卸载节点", "节点 <b>" + name + "</b> 将自毁，确定吗？", "danger", () => location.href = "/delete_agent?name=" + name); }
+
+        // Helper functions
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        const tIcon = document.getElementById('theme-icon');
+        if (tIcon) tIcon.className = savedTheme === 'dark' ? 'ri-moon-line' : 'ri-sun-line';
+
+        function genCmd() {
+            const n = document.getElementById('agentName').value;
+            const t = document.getElementById('addrType').value;
+            const arch = document.getElementById('archType').value;
+            const p = document.getElementById('connPort').value;
+            const finalDwUrl = dwUrl + "-linux-" + arch;
+            const host = (t === "domain") ? (m_domain || location.hostname) : (t === "v4" ? m_v4 : '[' + m_v6 + ']');
+            if (!host || host === "[]") { showToast("请先在设置中配置面板地址", "warn"); return; }
+
+            let cmd = 'curl -L -o /root/relay ' + finalDwUrl + ' && chmod +x /root/relay && /root/relay -service install -mode agent -name "' + n + '" -connect "' + host + ':' + p + '" -token "' + token + '"';
+
+            document.getElementById('cmdText').innerText = cmd;
+            document.getElementById('cmdText').style.opacity = '1';
+            showToast("命令已生成", "success");
+        }
+        function copyCmd() { copyText(document.getElementById('cmdText').innerText); }
+
+        function normalizeLegacyRuleForm(protoId, hintId) {
+            const proto = document.getElementById(protoId);
+            const hint = document.getElementById(hintId);
+            if (!proto) return;
+            if (proto.value === 'udp') {
+                if (hint) hint.innerText = '标准 UDP 转发模式';
+            } else {
+                if (hint) hint.innerText = '标准 TCP 转发模式';
+            }
+        }
+
+        function applyLegacyPreset(kind) {
+            const proto = document.getElementById('legacy_new_proto');
+            const hint = document.getElementById('legacy-rule-hint');
+            if (!proto) return;
+            if (kind === 'standard') {
+                proto.value = 'tcp';
+                if (hint) hint.innerText = '标准 TCP 转发模式';
+            } else if (kind === 'udp') {
+                proto.value = 'udp';
+                if (hint) hint.innerText = '标准 UDP 转发模式';
+            }
+            normalizeLegacyRuleForm('legacy_new_proto', 'legacy-rule-hint');
+        }
+
+        function applyLegacyEditPreset(kind) {
+            const proto = document.getElementById('e_proto');
+            const hint = document.getElementById('legacy-edit-rule-hint');
+            if (!proto) return;
+            if (kind === 'standard') {
+                proto.value = 'tcp';
+                if (hint) hint.innerText = '标准 TCP 转发模式';
+            } else if (kind === 'udp') {
+                proto.value = 'udp';
+                if (hint) hint.innerText = '标准 UDP 转发模式';
+            }
+            normalizeLegacyRuleForm('e_proto', 'legacy-edit-rule-hint');
+        }
+
+        function delRule(id) { showConfirm("删除规则", "端口将停止服务，确定删除吗？", "danger", () => location.href = "/delete?id=" + id); }
+        function toggleRule(id) { location.href = "/toggle?id=" + id; }
+        function resetTraffic(id) { showConfirm("重置流量", "确定要清零统计数据吗？", "warning", () => location.href = "/reset_traffic?id=" + id); }
+
+        function getSelectedRuleIds() {
+            return Array.from(document.querySelectorAll('.rule-bulk-select:checked')).map(x => x.value);
+        }
+        function updateBulkSelectedCount() {
+            const n = getSelectedRuleIds().length;
+            const el = document.getElementById('bulk_selected_count');
+            if (el) el.innerText = n + ' 已选';
+        }
+        function toggleAllRules(checked) {
+            document.querySelectorAll('.rule-bulk-select').forEach(x => x.checked = checked);
+            updateBulkSelectedCount();
+        }
+        function bulkRequest(action, extra, confirmText) {
+            const ids = getSelectedRuleIds();
+            if (ids.length === 0) { showToast('请先选择规则', 'warn'); return; }
+            const run = () => {
+                fetch('/api/v1/rules/bulk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(Object.assign({ ids: ids, action: action }, extra || {}))
+                }).then(r => r.json()).then(d => {
+                    if (d.success) { showToast('操作成功', 'success'); setTimeout(() => location.reload(), 500); }
+                    else { showToast('操作失败: ' + (d.error || 'unknown'), 'warn'); }
+                }).catch(() => showToast('请求失败', 'warn'));
+            };
+            if (confirmText) showConfirm('批量操作', confirmText, action === 'delete' ? 'danger' : 'warning', run);
+            else run();
+        }
+        function bulkSetDisabled(disabled) {
+            bulkRequest('set_disabled', { disabled: disabled }, disabled ? '确定批量暂停选中规则吗？' : '确定批量启用选中规则吗？');
+        }
+
+        function bulkResetTraffic() { bulkRequest('reset_traffic', {}, '确定批量清零流量统计吗？'); }
+        function bulkDeleteRules() { bulkRequest('delete', {}, '确定删除选中规则吗？此操作不可恢复。'); }
+
+        function editAlias(name, current) {
+            const val = prompt('设置节点别名（留空则清空）', current || '');
+            if (val === null) return;
+            fetch('/api/v1/agents/' + encodeURIComponent(name) + '/alias', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ alias: val.trim() })
+            }).then(r => r.json()).then(d => {
+                if (d.success) { showToast('别名已更新', 'success'); setTimeout(() => location.reload(), 300); }
+                else { showToast('更新失败: ' + (d.error || 'unknown'), 'warn'); }
+            }).catch(() => showToast('请求失败', 'warn'));
+        }
+
+        function openEdit(id, group, note, entry, eport, exit, tip, tport, proto, limit, speed, entryTLS) {
+            document.getElementById('e_id').value = id;
+            document.getElementById('e_group').value = group;
+            document.getElementById('e_note').value = note;
+            document.getElementById('e_entry').value = entry;
+            document.getElementById('e_eport').value = eport;
+            document.getElementById('e_exit').value = exit;
+            document.getElementById('e_tip').value = tip;
+            document.getElementById('e_tport').value = tport;
+            document.getElementById('e_proto').value = proto;
+            document.getElementById('e_limit').value = (parseFloat(limit) / (1024 * 1024 * 1024)).toFixed(2);
+            document.getElementById('e_speed').value = (parseFloat(speed) / (1024 * 1024)).toFixed(1);
+            normalizeLegacyRuleForm('e_proto', 'legacy-edit-rule-hint');
+            document.getElementById('editModal').style.display = 'block';
+        }
+        function closeEdit() { document.getElementById('editModal').style.display = 'none'; }
+        window.onclick = function (e) { if (e.target.className === 'modal') { closeEdit(); closeConfirm(); document.getElementById('twoFAModal').style.display = 'none'; } }
+        // Chart.js Configuration (Vars hoisted above)
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const p1 = document.getElementById('legacy_new_proto');
+            if (p1) {
+                p1.addEventListener('change', () => normalizeLegacyRuleForm('legacy_new_proto', 'legacy-rule-hint'));
+                applyLegacyPreset('standard');
+            }
+            const p2 = document.getElementById('e_proto');
+            if (p2) {
+                p2.addEventListener('change', () => normalizeLegacyRuleForm('e_proto', 'legacy-edit-rule-hint'));
+            }
+            updateBulkSelectedCount();
+        });
+        var tempSecret = "";
+        function enable2FA() { fetch('/2fa/generate').then(r => r.json()).then(d => { tempSecret = d.secret; document.getElementById('qrImage').src = d.qr; document.getElementById('twoFAModal').style.display = 'block'; }); }
+        function verify2FA() { fetch('/2fa/verify', { method: 'POST', body: JSON.stringify({ secret: tempSecret, code: document.getElementById('twoFACode').value }) }).then(r => r.json()).then(d => { if (d.success) { showToast("2FA 已开启", "success"); setTimeout(() => location.reload(), 1000); } else showToast("验证码错误", "warn"); }); }
+        function disable2FA() { showConfirm("关闭 2FA", "账户安全性将降低，确定吗？", "danger", () => { fetch('/2fa/disable').then(r => r.json()).then(d => { if (d.success) location.reload(); }); }); }
+
+        // Chart.js Configuration
+        if (typeof Chart !== 'undefined') {
+            Chart.defaults.font.family = "'Inter', sans-serif";
+            Chart.defaults.color = '#94a3b8';
+
+            var ctx = document.getElementById('trafficChart').getContext('2d');
+            var txGrad = ctx.createLinearGradient(0, 0, 0, 300);
+            txGrad.addColorStop(0, 'rgba(139, 92, 246, 0.2)');
+            txGrad.addColorStop(1, 'rgba(139, 92, 246, 0)');
+
+            var rxGrad = ctx.createLinearGradient(0, 0, 0, 300);
+            rxGrad.addColorStop(0, 'rgba(6, 182, 212, 0.2)');
+            rxGrad.addColorStop(1, 'rgba(6, 182, 212, 0)');
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array(30).fill(''),
+                    datasets: [
+                        { label: 'Tx', data: Array(30).fill(0), borderColor: '#8b5cf6', backgroundColor: txGrad, borderWidth: 2, pointRadius: 0, fill: true, tension: 0.4 },
+                        { label: 'Rx', data: Array(30).fill(0), borderColor: '#06b6d4', backgroundColor: rxGrad, borderWidth: 2, pointRadius: 0, fill: true, tension: 0.4 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false, backgroundColor: 'rgba(15, 23, 42, 0.9)', titleColor: '#f8fafc', bodyColor: '#cbd5e1', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 10, displayColors: true } },
+                    scales: {
+                        x: { display: false },
+                        y: { beginAtZero: true, grid: { color: 'rgba(128, 128, 128, 0.06)', borderDash: [4, 4] }, ticks: { callback: v => formatBytes(v) + '/s', font: { size: 10 }, maxTicksLimit: 5 } }
+                    },
+                    interaction: { mode: 'nearest', axis: 'x', intersect: false }
+                }
+            });
+
+            var ctxPie = document.getElementById('pieChart').getContext('2d');
+            pieChart = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{ data: [], backgroundColor: ['#818cf8', '#f472b6', '#fbbf24', '#34d399', '#60a5fa'], borderWidth: 0, hoverOffset: 4 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, usePointStyle: true, padding: 20, font: { size: 11 } } } },
+                    cutout: '75%'
+                }
+            });
+
+            updateChartTheme = function (theme) {
+                const gridColor = theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+                if (chart) {
+                    chart.options.scales.y.grid.color = gridColor;
+                    chart.update();
+                }
+            };
+        } else {
+            console.warn("Chart.js not loaded - Graphs disabled");
+            // Variables are already null/empty-function by default
+        }
+
+        function formatBytes(b) {
+            if (b == 0) return "0 B";
+            const u = 1024, i = Math.floor(Math.log(b) / Math.log(u));
+            return parseFloat((b / Math.pow(u, i)).toFixed(2)) + " " + ["B", "KB", "MB", "GB", "TB"][i];
+        }
+        function formatSpeed(b) {
+            if (b <= 0) return "0 B/s";
+            return formatBytes(b) + "/s";
+        }
+
+        function connectWS() {
+            const ws = new WebSocket((location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/ws');
+            ws.onmessage = function (e) {
+                try {
+                    const msg = JSON.parse(e.data);
+                    if (msg.type === 'stats' && msg.data) {
+                        const d = msg.data;
+                        document.getElementById('stat-total-traffic').innerText = formatBytes(d.total_traffic);
+                        document.getElementById('speed-rx').innerText = formatBytes(d.speed_rx) + '/s';
+                        document.getElementById('speed-tx').innerText = formatBytes(d.speed_tx) + '/s';
+
+                        if (chart) {
+                            chart.data.datasets[0].data.push(d.speed_tx); chart.data.datasets[0].data.shift();
+                            chart.data.datasets[1].data.push(d.speed_rx); chart.data.datasets[1].data.shift();
+                            chart.update('none');
+                        }
+
+                        if (d.rules) {
+                            const sortedRules = [...d.rules].sort((a, b) => b.total - a.total).slice(0, 5);
+                            if (pieChart) {
+                                pieChart.data.labels = sortedRules.map(r => r.name || '未命名');
+                                pieChart.data.datasets[0].data = sortedRules.map(r => r.total);
+                                pieChart.update('none');
+                            }
+
+                            const tbody = document.getElementById('rule-monitor-body');
+                            if (document.getElementById('dashboard').classList.contains('active')) {
+                                const activeIds = new Set();
+                                d.rules.forEach(r => {
+                                    let stx = 0, srx = 0;
+                                    if (lastRuleStats[r.id]) {
+                                        stx = r.tx - lastRuleStats[r.id].tx;
+                                        srx = r.rx - lastRuleStats[r.id].rx;
+                                        if (stx < 0) stx = 0; if (srx < 0) srx = 0;
+                                    }
+                                    lastRuleStats[r.id] = { tx: r.tx, rx: r.rx };
+
+                                    let row = document.getElementById('rule-row-mon-' + r.id);
+                                    if (!row) {
+                                        row = tbody.insertRow();
+                                        row.id = 'rule-row-mon-' + r.id;
+                                        row.innerHTML = '<td><div style="font-weight:600;font-size:13px;margin-bottom:2px">' + (r.name || '未命名') + '</div><div style="font-size:11px;color:var(--text-sub);font-family:var(--font-mono)">' + r.id.substring(0, 8) + '...</div></td>' +
+                                            '<td><div class="mini-chart-container"><canvas id="chart-tx-' + r.id + '"></canvas></div><div class="speed-text" style="color:#8b5cf6" id="text-tx-' + r.id + '">0 B/s</div></td>' +
+                                            '<td><div class="mini-chart-container"><canvas id="chart-rx-' + r.id + '"></canvas></div><div class="speed-text" style="color:#06b6d4" id="text-rx-' + r.id + '">0 B/s</div></td>' +
+                                            '<td style="font-family:var(--font-mono);font-weight:600" id="text-total-' + r.id + '">' + formatBytes(r.total) + '</td>';
+
+                                        const ctxTx = document.getElementById('chart-tx-' + r.id).getContext('2d');
+                                        const ctxRx = document.getElementById('chart-rx-' + r.id).getContext('2d');
+                                        if (typeof Chart !== 'undefined') {
+                                            ruleCharts[r.id] = { tx: new Chart(ctxTx, createMiniChartConfig('#8b5cf6')), rx: new Chart(ctxRx, createMiniChartConfig('#06b6d4')) };
+                                        }
+                                    } else {
+                                        document.getElementById('text-tx-' + r.id).innerText = formatSpeed(stx);
+                                        document.getElementById('text-rx-' + r.id).innerText = formatSpeed(srx);
+                                        document.getElementById('text-total-' + r.id).innerText = formatBytes(r.total);
+                                    }
+                                    const charts = ruleCharts[r.id];
+                                    if (charts) {
+                                        charts.tx.data.datasets[0].data.push(stx); charts.tx.data.datasets[0].data.shift(); charts.tx.update('none');
+                                        charts.rx.data.datasets[0].data.push(srx); charts.rx.data.datasets[0].data.shift(); charts.rx.update('none');
+                                    }
+                                });
+                                Array.from(tbody.children).forEach(tr => {
+                                    const id = tr.id.replace('rule-row-mon-', '');
+                                    if (id && !activeIds.has(id)) {
+                                        if (ruleCharts[id]) { ruleCharts[id].tx.destroy(); ruleCharts[id].rx.destroy(); delete ruleCharts[id]; }
+                                        tr.remove();
+                                    }
+                                });
+                            }
+
+                            d.rules.forEach(r => {
+                                const traf = document.getElementById('rule-traffic-' + r.id); if (traf) traf.innerText = formatBytes(r.total);
+                                const uc = document.getElementById('rule-uc-' + r.id); if (uc) uc.innerText = r.uc;
+                                const lat = document.getElementById('rule-latency-' + r.id);
+                                const dot = document.getElementById('rule-status-dot-' + r.id);
+                                if (lat && dot) {
+                                    if (r.status) {
+                                        lat.innerHTML = '<span style="color:#10b981;font-weight:600">' + r.latency + ' ms</span>';
+                                        dot.parentElement.className = 'badge success'; dot.parentElement.innerHTML = '<span class="status-dot pulse"></span> 运行中';
+                                    } else {
+                                        lat.innerHTML = '<span style="color:#ef4444">离线</span>';
+                                        dot.parentElement.className = 'badge danger'; dot.parentElement.innerHTML = '<span class="status-dot"></span> 异常';
+                                    }
+                                }
+                                if (r.limit > 0) {
+                                    let pct = (r.total / r.limit) * 100; if (pct > 100) pct = 100;
+                                    const bar = document.getElementById('rule-bar-' + r.id);
+                                    if (bar) { bar.style.width = pct + '%'; bar.style.background = pct > 90 ? '#ef4444' : '#6366f1'; }
+                                    const txt = document.getElementById('rule-limit-text-' + r.id);
+                                    if (txt) txt.innerText = pct.toFixed(1) + '%';
+                                }
+                            });
+                        }
+
+                        if (d.agents) d.agents.forEach(a => {
+                            const loadText = document.getElementById('load-text-' + a.name);
+                            const loadBar = document.getElementById('load-bar-' + a.name);
+                            if (loadText && loadBar) {
+                                let loadStr = a.sys_status;
+                                let loadVal = 0;
+                                if (loadStr.includes("Load:")) { loadVal = parseFloat(loadStr.split("|")[0].replace("Load:", "").trim()) || 0; }
+                                loadText.innerText = loadVal.toFixed(2);
+                                let pct = loadVal * 20; if (pct > 100) pct = 100;
+                                loadBar.style.width = pct + "%"; loadBar.style.background = pct > 80 ? "#ef4444" : "#10b981";
+                            }
+                        });
+
+                        if (d.logs && document.getElementById('logs').classList.contains('active')) {
+                            const tbody = document.getElementById('log-table-body');
+                            let html = '';
+                            d.logs.forEach(l => {
+                                html += '<tr><td style="font-family:var(--font-mono);color:var(--text-sub)">' + l.time + '</td>' +
+                                    '<td>' + l.ip + '</td>' +
+                                    '<td><span class="badge" style="background:var(--input-bg);color:var(--text-main);border:1px solid var(--border)">' + l.action + '</span></td>' +
+                                    '<td style="color:var(--text-sub)">' + l.msg + '</td></tr>';
+                            });
+                            tbody.innerHTML = html;
+                        }
+                    }
+                } catch (err) { console.log(err); }
+            };
+            ws.onclose = () => setTimeout(connectWS, 3000);
+        }
+        connectWS();
+    </script>
+</body>
+
+</html>
